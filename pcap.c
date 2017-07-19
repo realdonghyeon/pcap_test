@@ -5,10 +5,9 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <pcap/pcap.h>
-#include <string.h>
-
 
 void mac_address(const unsigned char* pak);
+void ip_address(const unsigned char* pak);
 
 int main(int argc, char *argv[]){
 
@@ -51,16 +50,18 @@ int main(int argc, char *argv[]){
 		if(res==0) 
 			continue;
 	mac_address(packet);
+		break; // why dont stop ! :(
 	}
-	return (0);
 }
 
 
 void mac_address(const unsigned char* pak){
 	struct ether_header *ep;
-	ep = (struct ether_header*)pak;
+	ep = (struct ether_header*)pak; // using ethernet.h struct "ether_header"
 
-	printf("SROUCE : %02x:%02x:%02x:%02x:%02x:%02x",ep->ether_shost[0], ep->ether_shost[1], ep->ether_shost[2],
+	printf("SOURCE : %02x:%02x:%02x:%02x:%02x:%02x \n",ep->ether_shost[0], ep->ether_shost[1], ep->ether_shost[2],
 			ep->ether_shost[3], ep->ether_shost[4], ep->ether_shost[5]);
+	printf("DESTINATION : %02x:%02x:%02x:%02x:%02x:%02x \n", ep->ether_dhost[0], ep->ether_dhost[1],ep->ether_dhost[2],
+			ep->ether_dhost[3], ep->ether_dhost[4], ep->ether_dhost[5]);
 
 }
