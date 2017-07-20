@@ -1,28 +1,43 @@
 #include <stdio.h>
+#include <pcap.h>
 #include <net/ethernet.h>
-#include <netinet/ip.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <arpa/inet.h>
-#include <pcap/pcap.h>
+#include <netinet/in.h>
+void mac_address(const u_char* pak);
+void ip_address(const u_char* pak, int len);
 
-void mac_address(const unsigned char* pak);
-void ip_address(const unsigned char* pak);
+
+#define BUF 256
+struct iphdr{
+    unsigned int version:4;
+	unsigned int ihl:4;
+    u_int8_t tos;
+	u_int16_t tot_len;
+	u_int16_t id;
+	u_int16_t frag_off;
+	u_int8_t ttl;
+	u_int8_t protocol;
+	u_int16_t check;
+	struct in_addr source;
+	struct in_addr dest;
+};__attribute__((packed));
 
 int main(int argc, char *argv[]){
 
 	pcap_t *handle;
 	char *dev;
 	char errbuf[PCAP_ERRBUF_SIZE];
+	char data[BUF];
 	struct bpf_program fp;
 	char filter_ex[] = "port 80";
 	bpf_u_int32 mask;
 	bpf_u_int32 net;
 	struct pcap_pkthdr header;
-	const u_char *packet;
+	const u_char *packet = data;
 	int res;
+	int pat_offset = 0;
 
-	dev = pcap_lookupdev(errbuf);
+	dev = argv[1];
 	if(dev == NULL){
 		printf("Error %s \n", errbuf);
 		return(2);
@@ -50,6 +65,8 @@ int main(int argc, char *argv[]){
 		if(res==0) 
 			continue;
 	mac_address(packet);
+	pat_offset = 14;
+	ip_address(packet, pat_offset);
 		break; // why dont stop ! :(
 	}
 }
@@ -63,5 +80,14 @@ void mac_address(const unsigned char* pak){
 			ep->ether_shost[3], ep->ether_shost[4], ep->ether_shost[5]);
 	printf("DESTINATION : %02x:%02x:%02x:%02x:%02x:%02x \n", ep->ether_dhost[0], ep->ether_dhost[1],ep->ether_dhost[2],
 			ep->ether_dhost[3], ep->ether_dhost[4], ep->ether_dhost[5]);
+}
 
+void ip_address(const u_char* pak, int len){
+	const u_char* data = pak;
+	pak += len;
+	struct iphdr *add;
+	add = (struct iphdr*)pak;
+
+	printf("%s\n", inet_ntoa(add->source));
+	printf("%s \n", inet_ntoa(add->dest));
 }
