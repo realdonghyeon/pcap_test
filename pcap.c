@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
 	}
 
 	while((res=pcap_next_ex(handle, &header, &packet))>=0){
-		if(res==0 || -1) 
+		if(res==0) 
 			continue;
 
 	mac_address(packet);
