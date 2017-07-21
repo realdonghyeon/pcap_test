@@ -7,12 +7,12 @@
 
 void ether_type_mac_address(const u_char* pak);
 void ip_address(const u_char* pak, int len);
-
-#define BUF 256
+void print_data(const u_char* pak);
+#define BUF 1024
 #define IPv4 8
 #define ARP 68
 
-struct iphdr{
+struct IP_Header{
     uint8_t version:4;
 	uint8_t ihl:4;
     uint8_t tos;
@@ -70,7 +70,9 @@ int main(int argc, char *argv[]){
 	ether_type_mac_address(packet);
 	pak_offset = 19;
 	ip_address(packet, pak_offset);
-		break;
+	print_data(packet);
+	break;
+
 	}
 }
 
@@ -81,7 +83,6 @@ void ether_type_mac_address(const u_char* pak){
 	u_char	smac[6];
 	u_short	type;
 };
-	char type[2];
 	struct mac_ether *ep;
 	ep = (struct mac_ether*)pak;
 
@@ -106,18 +107,40 @@ void ether_type_mac_address(const u_char* pak){
 void ip_address(const u_char* pak, int len){
 	char so_ip[16];
 	char de_ip[16];
-	struct iphdr *source;
+	struct IP_Header *source;
 	pak+=len;
-	source = (struct iphdr*)pak;
+	source = (struct IP_Header*)pak;
 
 	inet_ntop(AF_INET, &source->src, so_ip, sizeof(so_ip));
 	inet_ntop(AF_INET, &source->dec, de_ip, sizeof(de_ip));
-	inet_ntoa(source->sport);
-	inet_ntoa(source->dport);
+
 	printf("------------------IP_Heaer--------------- \n");
 	printf("SOURCE : %s \n", so_ip);
 	printf("DESTINATION : %s \n", de_ip);
-	printf("SOURCE PORT : %s \n", inet_ntohs(source->sport));
-	printf("DESTINATION PORT : %s \n", inet_ntohs(source->dport));
+	printf("SOURCE PORT : %d \n", ntohs(source->sport));
+	printf("DESTINATION PORT : %d \n", ntohs(source->dport));
 }
+
+void print_data(const u_char* pak){
+	printf("------------------PACKET_DATA------------ \n");
+	for(int i=0; i<BUF; i++){
+		printf("%02X ", pak[i]);
+		if(i%15==1)
+			printf("\n");
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
