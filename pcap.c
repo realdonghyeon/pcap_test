@@ -4,12 +4,13 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+
 void ether_type_mac_address(const u_char* pak);
 void ip_address(const u_char* pak, int len);
 
 #define BUF 256
-#define IPv4 0x0800
-#define ARP 0x0806
+#define IPv4 8
+#define ARP 68
 
 struct iphdr{
     uint8_t version:4;
@@ -20,9 +21,9 @@ struct iphdr{
 	uint16_t check;
 	struct in_addr src;
 	struct in_addr dec;
-	u_long sport;
-	u_long dport;
-};
+	uint16_t sport;
+	uint16_t dport;
+}__attribute__((packed));
 
 int main(int argc, char *argv[]){
 	pcap_t *handle;
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]){
 			continue;
 
 	ether_type_mac_address(packet);
-	pak_offset = 18;
+	pak_offset = 19;
 	ip_address(packet, pak_offset);
 		break;
 	}
@@ -75,42 +76,48 @@ int main(int argc, char *argv[]){
 
 
 void ether_type_mac_address(const u_char* pak){
-	struct ether_header *ep;
-	ep = (struct ether_header*)pak; // using ethernet.h struct "ether_header"
+	struct	mac_ether{
+	u_char	dmac[6];
+	u_char	smac[6];
+	u_short	type;
+};
+	char type[2];
+	struct mac_ether *ep;
+	ep = (struct mac_ether*)pak;
 
-	printf("------------------MAC--------------------- \n");
-	printf("SOURCE : %02X:%02X:%02X:%02X:%02X:%02X \n",ep->ether_shost[0], ep->ether_shost[1], ep->ether_shost[2],
-			ep->ether_shost[3], ep->ether_shost[4], ep->ether_shost[5]);
-	printf("DESTINATION : %02X:%02X:%02X:%02X:%02X:%02X \n", ep->ether_dhost[0], ep->ether_dhost[1],ep->ether_dhost[2],
-			ep->ether_dhost[3], ep->ether_dhost[4], ep->ether_dhost[5]);
-	printf("------------------MAC--------------------- \n");
-	switch(ep->ether_type){
-		case 8:
+	printf("------------------MAC-------------------- \n");
+	printf("SOURCE : %02X:%02X:%02X:%02X:%02X:%02X \n",ep->smac[0], ep->smac[1], ep->smac[2],
+			ep->smac[3], ep->smac[4], ep->smac[5]);
+	printf("DESTINATION : %02X:%02X:%02X:%02X:%02X:%02X \n", ep->dmac[0], ep->dmac[1],ep->dmac[2],
+			ep->dmac[3], ep->dmac[4], ep->dmac[5]);
+	printf("--------------ETHER_TYPE----------------- \n");
+	switch(ep->type){
+		case IPv4:
 			printf("IPv4 Type Packet \n");
 			break;
 		case ARP:
 			printf("ARP Type Packet \n");
 			break;
+		default:
+			printf("None \n");
 	}
 }
 
 void ip_address(const u_char* pak, int len){
 	char so_ip[16];
 	char de_ip[16];
-	char so_pt[2];
-	char de_pt[2];
-	/*struct iphdr *add;*/
 	struct iphdr *source;
 	pak+=len;
-	source = (struct ip*)pak;
-	/*add = (struct iphdr*)pak*/
+	source = (struct iphdr*)pak;
+
 	inet_ntop(AF_INET, &source->src, so_ip, sizeof(so_ip));
 	inet_ntop(AF_INET, &source->dec, de_ip, sizeof(de_ip));
-	inet_ntop(AF_INET, &source->sport, so_pt, sizeof(so_pt));
-	inet_ntop(AF_INET, &source->dport, de_pt, sizeof(de_pt));
-	printf("------------------IP---------------------- \n");
+	inet_ntoa(source->sport);
+	inet_ntoa(source->dport);
+	printf("------------------IP_Heaer--------------- \n");
 	printf("SOURCE : %s \n", so_ip);
 	printf("DESTINATION : %s \n", de_ip);
-	printf("%s \n", so_pt);
-	printf("------------------IP---------------------- \n");
+	printf("SOURCE PORT : %s \n", inet_ntohs(source->sport));
+	printf("DESTINATION PORT : %s \n", inet_ntohs(source->dport));
 }
+
