@@ -3,14 +3,15 @@
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+
 void mac_address(const u_char* pak);
 void ip_address(const u_char* pak, int len);
 
-
 #define BUF 256
+
 struct iphdr{
-    unsigned int version:4;
-	unsigned int ihl:4;
+    u_int8_t version:4;
+	u_int8_t ihl:4;
     u_int8_t tos;
 	u_int16_t tot_len;
 	u_int16_t id;
@@ -18,12 +19,11 @@ struct iphdr{
 	u_int8_t ttl;
 	u_int8_t protocol;
 	u_int16_t check;
-	struct in_addr source;
-	struct in_addr dest;
-};__attribute__((packed));
+	u_long s_ip;
+	u_long d_ip;
+}__attribute__((packed));
 
 int main(int argc, char *argv[]){
-
 	pcap_t *handle;
 	char *dev;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -62,32 +62,34 @@ int main(int argc, char *argv[]){
 	}
 
 	while((res=pcap_next_ex(handle, &header, &packet))>=0){
-		if(res==0) 
+		if(res==0 || -1) 
 			continue;
+
 	mac_address(packet);
-	pat_offset = 14;
+	pat_offset = 22;
 	ip_address(packet, pat_offset);
-		break; // why dont stop ! :(
+		break;
 	}
 }
 
 
-void mac_address(const unsigned char* pak){
+void mac_address(const u_char* pak){
 	struct ether_header *ep;
 	ep = (struct ether_header*)pak; // using ethernet.h struct "ether_header"
 
-	printf("SOURCE : %02x:%02x:%02x:%02x:%02x:%02x \n",ep->ether_shost[0], ep->ether_shost[1], ep->ether_shost[2],
+	printf("SOURCE : %02X:%02X:%02X:%02X:%02X:%02X \n",ep->ether_shost[0], ep->ether_shost[1], ep->ether_shost[2],
 			ep->ether_shost[3], ep->ether_shost[4], ep->ether_shost[5]);
-	printf("DESTINATION : %02x:%02x:%02x:%02x:%02x:%02x \n", ep->ether_dhost[0], ep->ether_dhost[1],ep->ether_dhost[2],
+	printf("DESTINATION : %02X:%02X:%02X:%02X:%02X:%02X \n", ep->ether_dhost[0], ep->ether_dhost[1],ep->ether_dhost[2],
 			ep->ether_dhost[3], ep->ether_dhost[4], ep->ether_dhost[5]);
 }
 
 void ip_address(const u_char* pak, int len){
-	const u_char* data = pak;
-	pak += len;
-	struct iphdr *add;
-	add = (struct iphdr*)pak;
-
-	printf("%s\n", inet_ntoa(add->source));
-	printf("%s \n", inet_ntoa(add->dest));
+	char ip[16];
+	/*struct iphdr *add;*/
+	struct iphdr *source;
+	pak+=len;
+	source = (struct iphdr*)pak;
+	/*add = (struct iphdr*)pak*/ 
+	inet_ntop(AF_INET, &source->s_ip, ip, sizeof(ip));
+	printf("SOURCE : %s \n", ip);
 }
