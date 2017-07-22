@@ -8,14 +8,15 @@
 void ether_type_mac_address(const u_char* pak);
 void ip_address(const u_char* pak, int len);
 void print_data(const u_char* pak);
+
 #define BUF 1024
-#define IPv4 8
-#define ARP 68
+#define IPv4 0x0800
+#define ARP 0x0806
 
 struct IP_Header{
-    uint8_t version:4;
+ 	uint8_t version:4;
 	uint8_t ihl:4;
-    uint8_t tos;
+	uint8_t tos;
 	uint16_t tot_len;
 	uint8_t protocol;
 	uint16_t check;
@@ -92,7 +93,7 @@ void ether_type_mac_address(const u_char* pak){
 	printf("DESTINATION : %02X:%02X:%02X:%02X:%02X:%02X \n", ep->dmac[0], ep->dmac[1],ep->dmac[2],
 			ep->dmac[3], ep->dmac[4], ep->dmac[5]);
 	printf("--------------ETHER_TYPE----------------- \n");
-	switch(ep->type){
+	switch(ntohs(ep->type)){
 		case IPv4:
 			printf("IPv4 Type Packet \n");
 			break;
@@ -128,4 +129,6 @@ void print_data(const u_char* pak){
 		if(i%15==1)
 			printf("\n");
 	}
+	printf("\n");
+	printf("----------------------------------------- \n");
 }
