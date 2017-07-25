@@ -106,8 +106,8 @@ void ether_type_mac_address(const u_char* pak){
 }
 
 void ip_address(const u_char* pak, int len){
-	char so_ip[16];
-	char de_ip[16];
+	char so_ip[INET_ADDRSTRLEN];
+	char de_ip[INET_ADDRSTRLEN];
 	struct IP_Header *source;
 	pak+=len;
 	source = (struct IP_Header*)pak;
